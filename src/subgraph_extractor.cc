@@ -159,7 +159,7 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
                 vinfo_proto = m_model->getValueInfo(vinfo_name);
             }
             catch (const std::out_of_range& e) {
-                continue;
+                vinfo_proto.set_name(vinfo_name);
             }
             input_protos.push_back(vinfo_proto);
         }
@@ -173,7 +173,7 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
                 vinfo_proto = m_model->getValueInfo(vinfo_name);
             }
             catch (const std::out_of_range& e) {
-                continue;
+                vinfo_proto.set_name(vinfo_name);
             }
             output_protos.push_back(vinfo_proto);
         }

@@ -1,7 +1,6 @@
 #include <iostream>
 
-#include "subg.h"
-#include "nn_subg.h"
+#include "subgraph_extractor.h"
 #include "onnx.proto3.pb.h"
 
 int main(int argc, const char* argv[]) {

@@ -1,7 +1,7 @@
-#ifndef NN_SUBG_H
-#define NN_SUBG_H
+#ifndef SUBGRAPH_EXTRACTOR_H
+#define SUBGRAPH_EXTRACTOR_H
 
-#include "subg.h"
+#include "graph.h"
 #include "onnx.proto3.pb.h"
 #include <filesystem>
 

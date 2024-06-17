@@ -5,7 +5,7 @@
 #include <map>
 #include <fstream>
 
-#include "nn_subg.h"
+#include "subgraph_extractor.h"
 #include "onnx.proto3.pb.h"
 
 struct HashNodeProto {

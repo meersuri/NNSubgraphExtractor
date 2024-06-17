@@ -1,4 +1,4 @@
-#include "subg.h"
+#include "graph.h"
 #include <gtest/gtest.h>
 
 TEST(GraphManipulation, addNode) {

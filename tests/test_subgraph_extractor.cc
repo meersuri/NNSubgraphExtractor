@@ -1,4 +1,4 @@
-#include "subg.h"
+#include "subgraph_extractor.h"
 #include <gtest/gtest.h>
 
 TEST(LineGraphTests, extractSequence) {

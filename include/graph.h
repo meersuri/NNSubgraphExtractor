@@ -1,5 +1,5 @@
-#ifndef SUBG_H
-#define SUBG_H
+#ifndef GRAPH_H
+#define GRAPH_H
 
 #include <vector>
 #include <string>

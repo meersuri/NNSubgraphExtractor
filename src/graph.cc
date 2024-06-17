@@ -1,10 +1,11 @@
-#include "subg.h"
 #include <iostream>
 #include <memory>
 #include <algorithm>
 #include <cassert>
 #include <set>
 #include <fstream>
+
+#include "graph.h"
 
 size_t Node::m_default_name_idx = 0;
 

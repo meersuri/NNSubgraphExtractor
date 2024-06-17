@@ -168,7 +168,6 @@ SubgraphExtractor::SubgraphExtractor(const DirectedGraph& graph): m_graph(graph)
 
 void SubgraphExtractor::dfs(Node* node, std::unordered_set<Node*>& visited, Direction dir) {
     visited.insert(node);
-    std::cout << node->name() << ' ';
     std::vector<Node*> adj;
     if (dir == Direction::in) {
         adj = m_graph.inbound(node);
@@ -202,6 +201,7 @@ void SubgraphExtractor::ensureNodesExist(const std::vector<Node*>& inputs, const
 DirectedGraph SubgraphExtractor::extract(const std::vector<Node*>& inputs, const std::vector<Node*>& outputs) {
     // TODO handle case where inputs and outputs overlap
     // TODO handle case of invalid inputs, outputs - outputs not reachable from inputs
+    // TODO handle inputs/outputs where one is ancestor/descendant of another
     ensureNodesExist(inputs, outputs);
 //    std::vector<Node*> top_layer;
 //    for (Node* node: inputs) {

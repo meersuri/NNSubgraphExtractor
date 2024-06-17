@@ -37,7 +37,6 @@ DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
     m_model_proto = model_proto;
     auto& graph = model_proto.graph();
     for (auto& vinfo: graph.value_info()) {
-        std::cout << vinfo.name() << "...";
         m_vinfo_map[vinfo.name()] = vinfo;
     }
 
@@ -62,16 +61,11 @@ DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
                 if (clone_map.find(out_node_proto) == clone_map.end()) {
                     clone_map[out_node_proto] = new Node(out_node_proto, out_node_proto.name());
                 }
-//                std::cout << node_proto.name() << "--" << out_node_proto.name() << '\n';
                 converted.addEdge(clone_map[node_proto], clone_map[out_node_proto]);
             }
         }
     }
-//    std::cout << "converted\n\n";
     assert(graph.node().size() ==  converted.nodes().size());
-//    for (Node* node: converted.nodes()) {
-//        std::cout << node->name() << '\n';
-//    }
     return converted;
 }
 

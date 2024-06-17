@@ -41,6 +41,10 @@ DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
         m_vinfo_map[vinfo.name()] = vinfo;
     }
 
+    for (auto& tensor_proto: graph.initializer()) {
+        m_init_map[tensor_proto.name()] = tensor_proto;
+    }
+
     std::unordered_map<std::string, std::vector<onnx::NodeProto>> vinfo_consumers;
     for (auto& node_proto: graph.node()) {
         for (auto& in_vinfo_name: node_proto.input()) {
@@ -73,6 +77,10 @@ DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
 
 onnx::ValueInfoProto OnnxModel::getValueInfo(const std::string& vinfo_name) {
     return m_vinfo_map.at(vinfo_name);
+}
+
+onnx::TensorProto OnnxModel::getTensorProto(const std::string& tensor_name) {
+    return m_init_map.at(tensor_name);
 }
 
 onnx::ModelProto OnnxModel::load(std::filesystem::path fpath) {
@@ -176,7 +184,22 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
             output_protos.push_back(vinfo_proto);
         }
     }
-    onnx::ModelProto* new_model = m_model->makeModel(node_protos, value_info_protos, input_protos, output_protos, {});
+
+    std::vector<onnx::TensorProto> inits;
+    for (auto& node: node_protos) {
+        for (auto& vinfo_name: node.input()) {
+            onnx::TensorProto tensor_proto;
+            try {
+                tensor_proto = m_model->getTensorProto(vinfo_name);
+            }
+            catch (const std::out_of_range& e) {
+                continue;
+            }
+            inits.push_back(tensor_proto);
+        }
+    }
+
+    onnx::ModelProto* new_model = m_model->makeModel(node_protos, value_info_protos, input_protos, output_protos, inits);
     return new OnnxModel(*new_model);
 }
 

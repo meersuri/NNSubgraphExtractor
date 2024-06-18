@@ -24,18 +24,17 @@ OnnxModel::OnnxModel(std::filesystem::path fpath): NNModel() {
     m_graph = convert(fpath);
 }
 
-OnnxModel::OnnxModel(const onnx::ModelProto& model_proto): NNModel() {
-    m_graph = convert(model_proto);
+OnnxModel::OnnxModel(std::unique_ptr<onnx::ModelProto> model_proto): NNModel() {
+    m_graph = convert(std::move(model_proto));
 }
 
-DirectedGraph OnnxModel::convert(std::filesystem::path fpath) {
-    m_model_proto = load(fpath);
-    return convert(m_model_proto);
+std::unique_ptr<DirectedGraph> OnnxModel::convert(std::filesystem::path fpath) {
+    return convert(load(fpath));
 }
 
-DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
-    m_model_proto = model_proto;
-    auto& graph = model_proto.graph();
+std::unique_ptr<DirectedGraph> OnnxModel::convert(std::unique_ptr<onnx::ModelProto> model_proto) {
+    m_model_proto = std::move(model_proto);
+    auto& graph = m_model_proto->graph();
     for (auto& vinfo: graph.value_info()) {
         m_vinfo_map[vinfo.name()] = vinfo;
     }
@@ -50,22 +49,22 @@ DirectedGraph OnnxModel::convert(const onnx::ModelProto& model_proto) {
             vinfo_consumers[in_vinfo_name].push_back(node_proto);
         }
     }
-    DirectedGraph converted;
-    std::unordered_map<onnx::NodeProto, Node*, HashNodeProto, NodeProtoEqual> clone_map;
+    auto converted = std::make_unique<DirectedGraph>();
+    std::unordered_map<onnx::NodeProto, PtrNode, HashNodeProto, NodeProtoEqual> clone_map;
     for (auto& node_proto: graph.node()) {
         if (clone_map.find(node_proto) == clone_map.end()) {
-            clone_map[node_proto] = new Node(node_proto, node_proto.name());
+            clone_map[node_proto] = std::make_shared<Node>(node_proto, node_proto.name());
         }
         for (auto& out_vinfo_name: node_proto.output()) {
             for (auto& out_node_proto: vinfo_consumers[out_vinfo_name]) {
                 if (clone_map.find(out_node_proto) == clone_map.end()) {
-                    clone_map[out_node_proto] = new Node(out_node_proto, out_node_proto.name());
+                    clone_map[out_node_proto] = std::make_shared<Node>(out_node_proto, out_node_proto.name());
                 }
-                converted.addEdge(clone_map[node_proto], clone_map[out_node_proto]);
+                converted->addEdge(clone_map[node_proto], clone_map[out_node_proto]);
             }
         }
     }
-    assert(graph.node().size() ==  converted.nodes().size());
+    assert(graph.node().size() ==  converted->nodes().size());
     return converted;
 }
 
@@ -77,7 +76,7 @@ onnx::TensorProto OnnxModel::getTensorProto(const std::string& tensor_name) {
     return m_init_map.at(tensor_name);
 }
 
-onnx::ModelProto OnnxModel::load(std::filesystem::path fpath) {
+std::unique_ptr<onnx::ModelProto> OnnxModel::load(std::filesystem::path fpath) {
     std::ifstream ifs(fpath.c_str(), std::ios::ate | std::ios::binary);
     if (!ifs.is_open()) {
         throw std::runtime_error("failed to open file");
@@ -86,23 +85,23 @@ onnx::ModelProto OnnxModel::load(std::filesystem::path fpath) {
     std::string buf(size, '\0');
     ifs.seekg(0);
     ifs.read(buf.data(), size);
-    onnx::ModelProto model;
-    model.ParseFromString(buf);
+    auto model = std::make_unique<onnx::ModelProto>();
+    model->ParseFromString(buf);
     return model;
 }
 
-NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs) {
-    std::vector<Node*> input_nodes;
+std::unique_ptr<NNModel> OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs) {
+    std::vector<PtrNode> input_nodes;
     for (const auto& name: inputs) {
-        auto node_opt = m_model->graph().nodeByName(name);
+        auto node_opt = m_model->graph()->nodeByName(name);
         if (!node_opt.has_value()) {
             throw std::runtime_error("Couldn't find node with name: " + name);
         }
         input_nodes.push_back(node_opt.value());
     }
-    std::vector<Node*> output_nodes;
+    std::vector<PtrNode> output_nodes;
     for (const auto& name: outputs) {
-        auto node_opt = m_model->graph().nodeByName(name);
+        auto node_opt = m_model->graph()->nodeByName(name);
         if (!node_opt.has_value()) {
             throw std::runtime_error("Couldn't find node with name: " + name);
         }
@@ -110,13 +109,13 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
     }
     auto subgraph = m_sgex.extract(input_nodes, output_nodes);
     std::cout << '\n';
-    for (const auto& e: subgraph.edges()) {
+    for (const auto& e: subgraph->edges()) {
         std::cout << e.from->name() << "->" << e.to->name() << ' '; 
     }
     std::cout << '\n';
 
     std::vector<onnx::NodeProto> node_protos;
-    for (auto node: subgraph.nodes()) {
+    for (auto node: subgraph->nodes()) {
         node_protos.push_back(std::any_cast<onnx::NodeProto>(node->data()));
     }
 
@@ -151,7 +150,7 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
         }
     }
 
-    for (auto node: subgraph.top()) {
+    for (auto node: subgraph->top()) {
         auto node_proto = std::any_cast<onnx::NodeProto>(node->data());
         for (auto& vinfo_name: node_proto.input()) {
             onnx::ValueInfoProto vinfo_proto;
@@ -165,7 +164,7 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
         }
     }
 
-    for (auto node: subgraph.bottom()) {
+    for (auto node: subgraph->bottom()) {
         auto node_proto = std::any_cast<onnx::NodeProto>(node->data());
         for (auto& vinfo_name: node_proto.output()) {
             onnx::ValueInfoProto vinfo_proto;
@@ -193,16 +192,16 @@ NNModel* OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, 
         }
     }
 
-    onnx::ModelProto* new_model = m_model->makeModel(node_protos, value_info_protos, input_protos, output_protos, inits);
-    return new OnnxModel(*new_model);
+    auto new_model = m_model->makeModel(node_protos, value_info_protos, input_protos, output_protos, inits);
+    return std::make_unique<OnnxModel>(std::move(new_model));
 }
 
-onnx::ModelProto* OnnxModel::makeModel(const std::vector<onnx::NodeProto>& nodes,
+std::unique_ptr<onnx::ModelProto> OnnxModel::makeModel(const std::vector<onnx::NodeProto>& nodes,
         const std::vector<onnx::ValueInfoProto>& values,
         const std::vector<onnx::ValueInfoProto>& inputs,
         const std::vector<onnx::ValueInfoProto>& outputs,
         const std::vector<onnx::TensorProto>& inits) {
-    onnx::ModelProto* model_proto = new onnx::ModelProto;
+    auto model_proto = std::make_unique<onnx::ModelProto>();
     model_proto->set_producer_name("ME");
     onnx::GraphProto* graph_proto = model_proto->mutable_graph();
     graph_proto->set_name("MY GRAPH");
@@ -231,7 +230,7 @@ onnx::ModelProto* OnnxModel::makeModel(const std::vector<onnx::NodeProto>& nodes
 
 void OnnxModel::save(std::filesystem::path fpath) {
     std::string serialized; 
-    m_model_proto.SerializeToString(&serialized);
+    m_model_proto->SerializeToString(&serialized);
     std::ofstream ofs(fpath.c_str(), std::ios::binary | std::ios::out);
     if (!ofs.is_open()) {
         throw std::runtime_error("Failed to open output file");

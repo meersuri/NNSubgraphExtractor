@@ -13,9 +13,9 @@ int main(int argc, const char* argv[]) {
     if (argc < 4) {
         throw std::runtime_error("Enter outputs");
     }
-    OnnxModel* model = new OnnxModel(argv[1]);
+    auto model = std::make_shared<OnnxModel>(argv[1]);
     OnnxSubgraphExtractor ex(model);
-    NNModel* new_model = ex.extract({argv[2]}, {argv[3]});
+    auto new_model = ex.extract({argv[2]}, {argv[3]});
     new_model->save("cropped.onnx");
     return 0;
 }

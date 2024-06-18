@@ -26,17 +26,17 @@ DirectedGraph::DirectedGraph(): DirectedGraph(std::string{"G"}) {}
 DirectedGraph::DirectedGraph(const std::string& name): m_name(name) {}
 
 DirectedGraph::DirectedGraph(const std::string& name,
-        const std::vector<Node*>& nodes): m_name(name) {
-    for(Node* node: nodes) {
+        const std::vector<PtrNode>& nodes): m_name(name) {
+    for(PtrNode node: nodes) {
         addNode(node);
     }
 }
 
-bool DirectedGraph::hasNode(Node* node) const {
+bool DirectedGraph::hasNode(PtrNode node) const {
     return m_adj.find(node) != m_adj.end();
 }
 
-std::optional<Node*> DirectedGraph::nodeByName(const std::string& name) const {
+std::optional<PtrNode> DirectedGraph::nodeByName(const std::string& name) const {
     for (const auto& [node, adj]: m_adj ) {
         if (node->name() == name) {
             return {node};
@@ -46,7 +46,7 @@ std::optional<Node*> DirectedGraph::nodeByName(const std::string& name) const {
 }
 
 
-bool DirectedGraph::addNode(Node* node) {
+bool DirectedGraph::addNode(PtrNode node) {
     if (m_adj.find(node) != m_adj.end()) {
         return false;
     }
@@ -54,7 +54,7 @@ bool DirectedGraph::addNode(Node* node) {
     return true;
 }
 
-bool DirectedGraph::addEdge(Node* from, Node* to, const std::string& label) {
+bool DirectedGraph::addEdge(PtrNode from, PtrNode to, const std::string& label) {
     const auto& out_nodes = m_adj[from]["outbound"];
     auto to_iter = std::find_if(out_nodes.cbegin(), out_nodes.cend(), [=](const auto& p) { return p.first == to; });
     if (to_iter != out_nodes.end()) {
@@ -67,11 +67,11 @@ bool DirectedGraph::addEdge(Node* from, Node* to, const std::string& label) {
     return true;
 }
 
-bool DirectedGraph::addEdge(Node* from, Node* to) {
+bool DirectedGraph::addEdge(PtrNode from, PtrNode to) {
     return addEdge(from, to, std::string{});
 }
 
-bool DirectedGraph::removeEdge(Node* from, Node* to) {
+bool DirectedGraph::removeEdge(PtrNode from, PtrNode to) {
     auto& out_nodes = m_adj[from]["outbound"];
     auto to_iter = std::find_if(out_nodes.begin(), out_nodes.end(), [=](const auto& p) { return p.first == to; });
     if (to_iter == out_nodes.end()) {
@@ -86,16 +86,16 @@ bool DirectedGraph::removeEdge(Node* from, Node* to) {
     return true;
 }
 
-std::vector<Node*> DirectedGraph::nodes() const {
-    std::vector<Node*> nodes;
+std::vector<PtrNode> DirectedGraph::nodes() const {
+    std::vector<PtrNode> nodes;
     for (const auto& [node, adj]: m_adj) {
         nodes.push_back(node);
     }
     return nodes;
 }
 
-std::vector<Node*> DirectedGraph::top() const {
-    std::vector<Node*> nodes;
+std::vector<PtrNode> DirectedGraph::top() const {
+    std::vector<PtrNode> nodes;
     for (const auto& [node, adj]: m_adj) {
         if (adj.at("inbound").empty()) {
             nodes.push_back(node);
@@ -104,8 +104,8 @@ std::vector<Node*> DirectedGraph::top() const {
     return nodes;
 }
 
-std::vector<Node*> DirectedGraph::bottom() const {
-    std::vector<Node*> nodes;
+std::vector<PtrNode> DirectedGraph::bottom() const {
+    std::vector<PtrNode> nodes;
     for (const auto& [node, adj]: m_adj) {
         if (adj.at("outbound").empty()) {
             nodes.push_back(node);
@@ -124,16 +124,16 @@ std::vector<DirectedEdge> DirectedGraph::edges() const {
     return edges;
 }
 
-std::vector<Node*> DirectedGraph::inbound(Node* node) const {
-    std::vector<Node*> nodes;
+std::vector<PtrNode> DirectedGraph::inbound(PtrNode node) const {
+    std::vector<PtrNode> nodes;
     for (const auto& p: m_adj.at(node).at("inbound")) {
         nodes.push_back(p.first);
     }
     return nodes;
 }
 
-std::vector<Node*> DirectedGraph::outbound(Node* node) const {
-    std::vector<Node*> nodes;
+std::vector<PtrNode> DirectedGraph::outbound(PtrNode node) const {
+    std::vector<PtrNode> nodes;
     for (const auto& p: m_adj.at(node).at("outbound")) {
         nodes.push_back(p.first);
     }
@@ -150,8 +150,8 @@ std::ostream& operator<<(std::ostream& os, const DirectedEdge& edge) {
     return os;
 }
 
-void printNodes(const std::vector<Node*>& nodes) {
-    for (Node* n: nodes) {
+void printNodes(const std::vector<PtrNode>& nodes) {
+    for (PtrNode n: nodes) {
         std::cout << *n << ' ';
     }
     std::cout << '\n';
@@ -164,92 +164,92 @@ void printEdges(const DirectedGraph& g) {
     std::cout << '\n';
 }
 
-SubgraphExtractor::SubgraphExtractor(const DirectedGraph& graph): m_graph(graph) {}
+SubgraphExtractor::SubgraphExtractor(std::shared_ptr<DirectedGraph> graph): m_graph(graph) {}
 
-void SubgraphExtractor::dfs(Node* node, std::unordered_set<Node*>& visited, Direction dir) {
+void SubgraphExtractor::dfs(PtrNode node, std::unordered_set<PtrNode>& visited, Direction dir) {
     visited.insert(node);
-    std::vector<Node*> adj;
+    std::vector<PtrNode> adj;
     if (dir == Direction::in) {
-        adj = m_graph.inbound(node);
+        adj = m_graph->inbound(node);
     }
     else if (dir == Direction::out) {
-        adj = m_graph.outbound(node);
+        adj = m_graph->outbound(node);
     }
     else {
-        adj = m_graph.inbound(node);
-        for (Node* out_node: m_graph.outbound(node)) {
+        adj = m_graph->inbound(node);
+        for (PtrNode out_node: m_graph->outbound(node)) {
             adj.push_back(out_node);
         }
     }
-    for (Node* adj_node: adj) {
+    for (PtrNode adj_node: adj) {
         if (visited.find(adj_node) == visited.end()) {
             dfs(adj_node, visited, dir);
         }
     }
 }
 
-void SubgraphExtractor::ensureNodesExist(const std::vector<Node*>& inputs, const std::vector<Node*>& outputs) {
-    std::vector<Node*> boundary_nodes(inputs.begin(), inputs.end());
+void SubgraphExtractor::ensureNodesExist(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs) {
+    std::vector<PtrNode> boundary_nodes(inputs.begin(), inputs.end());
     boundary_nodes.insert(boundary_nodes.end(), outputs.begin(), outputs.end());
-    for (Node* node: boundary_nodes) {
-        if (!m_graph.hasNode(node)) {
+    for (PtrNode node: boundary_nodes) {
+        if (!m_graph->hasNode(node)) {
             throw std::runtime_error("Node: " + node->name() + " not present in graph");
         }
     }
 }
                 
-DirectedGraph SubgraphExtractor::extract(const std::vector<Node*>& inputs, const std::vector<Node*>& outputs) {
+std::unique_ptr<DirectedGraph> SubgraphExtractor::extract(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs) {
     // TODO handle case where inputs and outputs overlap
     // TODO handle case of invalid inputs, outputs - outputs not reachable from inputs
     // TODO handle inputs/outputs where one is ancestor/descendant of another
     ensureNodesExist(inputs, outputs);
-//    std::vector<Node*> top_layer;
-//    for (Node* node: inputs) {
-//        for (Node* out_node: m_graph.outbound(node)) {
+//    std::vector<PtrNode> top_layer;
+//    for (PtrNode node: inputs) {
+//        for (PtrNode out_node: m_graph.outbound(node)) {
 //            top_layer.push_back(out_node);
 //        }
 //    }
 
-    std::unordered_set<Node*> outward_subgraph_nodes(outputs.begin(), outputs.end());
-    for (Node* node: inputs) {
+    std::unordered_set<PtrNode> outward_subgraph_nodes(outputs.begin(), outputs.end());
+    for (PtrNode node: inputs) {
         dfs(node, outward_subgraph_nodes, Direction::out);
     }
 
-//    std::vector<Node*> bottom_layer;
-//    for (Node* node: outputs) {
-//        for (Node* in_node: m_graph.inbound(node)) {
+//    std::vector<PtrNode> bottom_layer;
+//    for (PtrNode node: outputs) {
+//        for (PtrNode in_node: m_graph.inbound(node)) {
 //            bottom_layer.push_back(in_node);
 //        }
 //    }
 
-    std::unordered_set<Node*> inward_subgraph_nodes(inputs.begin(), inputs.end());
-    for (Node* node: outputs) {
+    std::unordered_set<PtrNode> inward_subgraph_nodes(inputs.begin(), inputs.end());
+    for (PtrNode node: outputs) {
         dfs(node, inward_subgraph_nodes, Direction::in);
     }
 
     inward_subgraph_nodes.merge(outward_subgraph_nodes);
-    std::unordered_set<Node*>& subgraph_nodes = inward_subgraph_nodes;
+    std::unordered_set<PtrNode>& subgraph_nodes = inward_subgraph_nodes;
 
     return cloneGraph(subgraph_nodes);
 }
 
-DirectedGraph SubgraphExtractor::cloneGraph(const std::unordered_set<Node*>& nodes) const {
-    DirectedGraph graph_clone("subgraph");
-    std::unordered_map<Node*, Node*> clone_map;
-    for (Node* node: nodes) {
+std::unique_ptr<DirectedGraph> SubgraphExtractor::cloneGraph(const std::unordered_set<PtrNode>& nodes) const {
+   auto graph_clone = std::make_unique<DirectedGraph>("subgraph");
+    std::unordered_map<PtrNode, PtrNode> clone_map;
+    for (PtrNode node: nodes) {
         if (clone_map.find(node) == clone_map.end()) {
-            clone_map[node] = new Node(node->data(), node->name());
+            clone_map[node] = std::make_shared<Node>(node->data(), node->name());
         }
-        Node* node_clone = clone_map[node];
-        for (Node* out_node: m_graph.outbound(node)) {
+        PtrNode node_clone = clone_map[node];
+        for (PtrNode out_node: m_graph->outbound(node)) {
             if (nodes.find(out_node) == nodes.end()) {
                 continue;
             }
             if (clone_map.find(out_node) == clone_map.end()) {
-                clone_map[out_node] = new Node(out_node->data(), out_node->name());
+                clone_map[out_node] = std::make_shared<Node>(out_node->data(), out_node->name());
             }
-            Node* out_node_clone = clone_map[out_node];
-            graph_clone.addEdge(node_clone, out_node_clone);
+            PtrNode out_node_clone = clone_map[out_node];
+            graph_clone->addEdge(node_clone, out_node_clone);
         }
     }
     return graph_clone;

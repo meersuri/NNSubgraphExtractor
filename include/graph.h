@@ -8,6 +8,8 @@
 #include <any>
 #include <filesystem>
 #include <optional>
+#include <memory>
+#include <iostream>
 
 class Node {
     std::string m_name;
@@ -22,32 +24,34 @@ class Node {
         const std::any& data() const;
 };
 
+using PtrNode = std::shared_ptr<Node>;
+
 struct DirectedEdge {
-    Node* from;
-    Node* to;
+    PtrNode from;
+    PtrNode to;
     std::string label;
 };
 
 class DirectedGraph {
     std::string m_name;
-    using MapStrVecNodeLabelPair = std::unordered_map<std::string, std::vector<std::pair<Node*, std::string>>>;
-    std::unordered_map<Node*, MapStrVecNodeLabelPair> m_adj;
+    using MapStrVecNodeLabelPair = std::unordered_map<std::string, std::vector<std::pair<PtrNode, std::string>>>;
+    std::unordered_map<PtrNode, MapStrVecNodeLabelPair> m_adj;
     public:
         DirectedGraph();
         DirectedGraph(const std::string& name);
-        DirectedGraph(const std::string& name, const std::vector<Node*>& nodes);
-        bool hasNode(Node* node) const;
-        std::optional<Node*> nodeByName(const std::string& name) const;
-        bool addNode(Node* node);
-        bool addEdge(Node* from, Node* to);
-        bool addEdge(Node* from, Node* to, const std::string& label);
-        bool removeEdge(Node* from, Node* to);
-        std::vector<Node*> nodes() const;
-        std::vector<Node*> top() const;
-        std::vector<Node*> bottom() const;
+        DirectedGraph(const std::string& name, const std::vector<PtrNode>& nodes);
+        bool hasNode(PtrNode node) const;
+        std::optional<PtrNode> nodeByName(const std::string& name) const;
+        bool addNode(PtrNode node);
+        bool addEdge(PtrNode from, PtrNode to);
+        bool addEdge(PtrNode from, PtrNode to, const std::string& label);
+        bool removeEdge(PtrNode from, PtrNode to);
+        std::vector<PtrNode> nodes() const;
+        std::vector<PtrNode> top() const;
+        std::vector<PtrNode> bottom() const;
         std::vector<DirectedEdge> edges() const;
-        std::vector<Node*> inbound(Node* node) const ;
-        std::vector<Node*> outbound(Node* node) const ;
+        std::vector<PtrNode> inbound(PtrNode node) const ;
+        std::vector<PtrNode> outbound(PtrNode node) const ;
 };
 
 enum class Direction {
@@ -58,15 +62,13 @@ enum class Direction {
 
 class SubgraphExtractor {
     public:
-        SubgraphExtractor(const DirectedGraph& graph);
-        DirectedGraph extract(const std::vector<Node*>& inputs, const std::vector<Node*>& outputs);
+        SubgraphExtractor(std::shared_ptr<DirectedGraph> graph);
+        std::unique_ptr<DirectedGraph> extract(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs);
     private:
-        void dfs(Node* node, std::unordered_set<Node*>& visited, Direction d);
-        void ensureNodesExist(const std::vector<Node*>& inputs, const std::vector<Node*>& outputs);
-        DirectedGraph cloneGraph(const std::unordered_set<Node*>& nodes) const;
-        DirectedGraph m_graph;
+        void dfs(PtrNode node, std::unordered_set<PtrNode>& visited, Direction d);
+        void ensureNodesExist(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs);
+        std::unique_ptr<DirectedGraph> cloneGraph(const std::unordered_set<PtrNode>& nodes) const;
+        std::shared_ptr<DirectedGraph> m_graph;
 };
 
 #endif
-
-

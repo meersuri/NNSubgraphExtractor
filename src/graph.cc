@@ -164,7 +164,7 @@ void printEdges(const DirectedGraph& g) {
     std::cout << '\n';
 }
 
-SubgraphExtractor::SubgraphExtractor(std::shared_ptr<DirectedGraph> graph): m_graph(graph) {}
+SubgraphExtractor::SubgraphExtractor(DirectedGraph* graph): m_graph(graph) {}
 
 void SubgraphExtractor::dfs(PtrNode node, std::unordered_set<PtrNode>& visited, Direction dir) {
     visited.insert(node);

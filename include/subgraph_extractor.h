@@ -11,12 +11,12 @@
 class NNModel {
     public:
         NNModel() = default;
-        NNModel(std::shared_ptr<DirectedGraph> graph): m_graph(graph) {};
-        virtual std::shared_ptr<DirectedGraph> graph() { return m_graph; }
+        NNModel(std::unique_ptr<DirectedGraph> graph): m_graph(std::move(graph)) {};
+        virtual DirectedGraph* graph() { return m_graph.get(); }
         virtual void save(std::filesystem::path fpath) = 0;
         virtual ~NNModel() = default;
     protected:
-        std::shared_ptr<DirectedGraph> m_graph;
+        std::unique_ptr<DirectedGraph> m_graph;
 };
 
 class OnnxModel: public NNModel {

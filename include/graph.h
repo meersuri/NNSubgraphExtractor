@@ -62,13 +62,13 @@ enum class Direction {
 
 class SubgraphExtractor {
     public:
-        SubgraphExtractor(std::shared_ptr<DirectedGraph> graph);
+        SubgraphExtractor(DirectedGraph* graph);
         std::unique_ptr<DirectedGraph> extract(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs);
     private:
         void dfs(PtrNode node, std::unordered_set<PtrNode>& visited, Direction d);
         void ensureNodesExist(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs);
         std::unique_ptr<DirectedGraph> cloneGraph(const std::unordered_set<PtrNode>& nodes) const;
-        std::shared_ptr<DirectedGraph> m_graph;
+        DirectedGraph* m_graph;
 };
 
 #endif

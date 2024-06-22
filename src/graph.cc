@@ -199,31 +199,23 @@ void SubgraphExtractor::ensureNodesExist(const std::vector<PtrNode>& inputs, con
 }
                 
 std::unique_ptr<DirectedGraph> SubgraphExtractor::extract(const std::vector<PtrNode>& inputs, const std::vector<PtrNode>& outputs) {
-    // TODO handle case where inputs and outputs overlap
     // TODO handle case of invalid inputs, outputs - outputs not reachable from inputs
     // TODO handle inputs/outputs where one is ancestor/descendant of another
     ensureNodesExist(inputs, outputs);
-//    std::vector<PtrNode> top_layer;
-//    for (PtrNode node: inputs) {
-//        for (PtrNode out_node: m_graph.outbound(node)) {
-//            top_layer.push_back(out_node);
-//        }
-//    }
 
     std::unordered_set<PtrNode> outward_subgraph_nodes(outputs.begin(), outputs.end());
     for (PtrNode node: inputs) {
+        if (outward_subgraph_nodes.find(node) != outward_subgraph_nodes.end()) {
+            continue;
+        }
         dfs(node, outward_subgraph_nodes, Direction::out);
     }
 
-//    std::vector<PtrNode> bottom_layer;
-//    for (PtrNode node: outputs) {
-//        for (PtrNode in_node: m_graph.inbound(node)) {
-//            bottom_layer.push_back(in_node);
-//        }
-//    }
-
     std::unordered_set<PtrNode> inward_subgraph_nodes(inputs.begin(), inputs.end());
     for (PtrNode node: outputs) {
+        if (inward_subgraph_nodes.find(node) != inward_subgraph_nodes.end()) {
+            continue;
+        }
         dfs(node, inward_subgraph_nodes, Direction::in);
     }
 
@@ -241,6 +233,7 @@ std::unique_ptr<DirectedGraph> SubgraphExtractor::cloneGraph(const std::unordere
             clone_map[node] = std::make_shared<Node>(node->data(), node->name());
         }
         PtrNode node_clone = clone_map[node];
+        graph_clone->addNode(node_clone);
         for (PtrNode out_node: m_graph->outbound(node)) {
             if (nodes.find(out_node) == nodes.end()) {
                 continue;

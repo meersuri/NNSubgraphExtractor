@@ -55,6 +55,7 @@ std::unique_ptr<DirectedGraph> OnnxModel::convert(std::unique_ptr<onnx::ModelPro
         if (clone_map.find(node_proto) == clone_map.end()) {
             clone_map[node_proto] = std::make_shared<Node>(node_proto, node_proto.name());
         }
+        converted->addNode(clone_map[node_proto]);
         for (auto& out_vinfo_name: node_proto.output()) {
             for (auto& out_node_proto: vinfo_consumers[out_vinfo_name]) {
                 if (clone_map.find(out_node_proto) == clone_map.end()) {

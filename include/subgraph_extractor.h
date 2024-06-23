@@ -25,6 +25,7 @@ class OnnxModel: public NNModel {
         OnnxModel(std::unique_ptr<onnx::ModelProto> model_proto);
         onnx::ValueInfoProto getValueInfo(const std::string& vinfo_name);
         onnx::TensorProto getTensorProto(const std::string& tensor_name);
+        bool isConst(const std::string& node_name) const;
         std::unique_ptr<onnx::ModelProto> makeModel(const std::vector<onnx::NodeProto>& nodes,
                 const std::vector<onnx::ValueInfoProto>& values,
                 const std::vector<onnx::ValueInfoProto>& inputs,
@@ -38,6 +39,7 @@ class OnnxModel: public NNModel {
         std::unique_ptr<onnx::ModelProto> m_model_proto;
         std::unordered_map<std::string, onnx::ValueInfoProto> m_vinfo_map;
         std::unordered_map<std::string, onnx::TensorProto> m_init_map;
+        std::unordered_map<std::string, onnx::NodeProto> m_const_map;
         
 };
 

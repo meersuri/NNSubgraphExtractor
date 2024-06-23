@@ -45,6 +45,9 @@ std::unique_ptr<DirectedGraph> OnnxModel::convert(std::unique_ptr<onnx::ModelPro
 
     std::unordered_map<std::string, std::vector<onnx::NodeProto>> vinfo_consumers;
     for (auto& node_proto: graph.node()) {
+        if (node_proto.op_type() == "Constant") {
+            m_const_map[node_proto.name()] = node_proto;
+        }
         for (auto& in_vinfo_name: node_proto.input()) {
             vinfo_consumers[in_vinfo_name].push_back(node_proto);
         }
@@ -73,6 +76,10 @@ onnx::ValueInfoProto OnnxModel::getValueInfo(const std::string& vinfo_name) {
     return m_vinfo_map.at(vinfo_name);
 }
 
+bool OnnxModel::isConst(const std::string& node_name) const {
+    return m_const_map.find(node_name) != m_const_map.end();
+}
+
 onnx::TensorProto OnnxModel::getTensorProto(const std::string& tensor_name) {
     return m_init_map.at(tensor_name);
 }
@@ -93,6 +100,19 @@ std::unique_ptr<onnx::ModelProto> OnnxModel::load(std::filesystem::path fpath) {
 
 std::unique_ptr<NNModel> OnnxSubgraphExtractor::extract(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs) {
     std::vector<PtrNode> input_nodes;
+    if (inputs.empty()) {
+        auto top_nodes = m_model->graph()->top();
+        for (auto& node: top_nodes) {
+            if (m_model->isConst(node->name())) {
+                continue;
+            }
+            input_nodes.push_back(node);
+        }
+    }
+    std::vector<PtrNode> output_nodes;
+    if (outputs.empty()) {
+        output_nodes = m_model->graph()->bottom();
+    }
     for (const auto& name: inputs) {
         auto node_opt = m_model->graph()->nodeByName(name);
         if (!node_opt.has_value()) {
@@ -100,7 +120,6 @@ std::unique_ptr<NNModel> OnnxSubgraphExtractor::extract(const std::vector<std::s
         }
         input_nodes.push_back(node_opt.value());
     }
-    std::vector<PtrNode> output_nodes;
     for (const auto& name: outputs) {
         auto node_opt = m_model->graph()->nodeByName(name);
         if (!node_opt.has_value()) {

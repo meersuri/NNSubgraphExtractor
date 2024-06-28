@@ -7,10 +7,10 @@ TEST(GraphManipulation, addNode) {
     auto n2 = std::make_shared<Node>(2);
     auto n3 = std::make_shared<Node>(3);
     ASSERT_TRUE(graph.addNode(n1));
-    ASSERT_TRUE(!graph.addNode(n1));
+    ASSERT_FALSE(graph.addNode(n1));
     ASSERT_TRUE(graph.hasNode(n1));
-    ASSERT_TRUE(!graph.hasNode(n2));
-    ASSERT_TRUE(!graph.hasNode(n3));
+    ASSERT_FALSE(graph.hasNode(n2));
+    ASSERT_FALSE(graph.hasNode(n3));
     graph.addNode(n2);
     ASSERT_TRUE(graph.hasNode(n2));
     graph.addNode(n3);
@@ -23,10 +23,10 @@ TEST(GraphManipulation, addEdge) {
     auto n2 = std::make_shared<Node>(2);
     auto n3 = std::make_shared<Node>(3);
     ASSERT_TRUE(graph.addEdge(n1, n2));
-    ASSERT_TRUE(!graph.addEdge(n1, n2));
+    ASSERT_FALSE(graph.addEdge(n1, n2));
     ASSERT_TRUE(graph.addEdge(n1, n3));
-    ASSERT_TRUE(graph.nodes().size() == 3);
-    ASSERT_TRUE(graph.edges().size() == 2);
+    ASSERT_EQ(graph.nodes().size(), 3);
+    ASSERT_EQ(graph.edges().size(), 2);
 }
 
 TEST(GraphManipulation, removeEdge) {
@@ -36,10 +36,10 @@ TEST(GraphManipulation, removeEdge) {
     auto n3 = std::make_shared<Node>(3);
     graph.addEdge(n1, n2);
     ASSERT_TRUE(graph.removeEdge(n1, n2));
-    ASSERT_TRUE(!graph.removeEdge(n1, n2));
-    ASSERT_TRUE(graph.edges().size() == 0);
+    ASSERT_FALSE(graph.removeEdge(n1, n2));
+    ASSERT_EQ(graph.edges().size(), 0);
     ASSERT_TRUE(graph.addEdge(n1, n3));
-    ASSERT_TRUE(graph.edges().size() == 1);
+    ASSERT_EQ(graph.edges().size(), 1);
 }
 
 TEST(GraphManipulation, topBottom) {
@@ -54,7 +54,8 @@ TEST(GraphManipulation, topBottom) {
     auto top = graph.top();
     auto bottom = graph.bottom();
     ASSERT_TRUE(bottom == std::vector<std::shared_ptr<Node>>{n4});
-    ASSERT_TRUE(top.size() == 3);
+    ASSERT_EQ(top.size(), 3);
     auto top_set = std::set<std::shared_ptr<Node>>(top.begin(), top.end());
-    ASSERT_TRUE((top_set == std::set<std::shared_ptr<Node>>{n1, n2, n3}));
+    std::set<std::shared_ptr<Node>> true_top_set{n1, n2, n3};
+    ASSERT_EQ(top_set, true_top_set);
 }

@@ -12,7 +12,7 @@ TEST(LineGraphTests, extractSequence) {
         }
     }
     SubgraphExtractor ex(graph.get());
-    for (auto& [start, end]: std::vector<std::pair<int, int>>{{0,1}, {1,3}, {2,4}, {2,3}, {0, 4}}) {
+    for (auto& [start, end]: std::vector<std::pair<int, int>>{{0,0}, {4,4}, {0,1}, {1,3}, {2,4}, {2,3}, {0,4}}) {
         auto subg = ex.extract({nodes[start]}, {nodes[end]});
         ASSERT_TRUE(subg->nodes().size() == end - start + 1);
     }

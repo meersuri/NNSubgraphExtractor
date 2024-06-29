@@ -4,6 +4,7 @@
 #include <cassert>
 #include <set>
 #include <fstream>
+#include <queue>
 
 #include "graph.h"
 
@@ -90,6 +91,33 @@ std::vector<PtrNode> DirectedGraph::nodes() const {
     std::vector<PtrNode> nodes;
     for (const auto& [node, adj]: m_adj) {
         nodes.push_back(node);
+    }
+    return nodes;
+}
+
+std::vector<PtrNode> DirectedGraph::nodes_sorted() const {
+    std::unordered_map<PtrNode, int> in_degree;
+    std::queue<PtrNode> frontier;
+    for (const auto& [node, adj]: m_adj) {
+        in_degree[node] = adj.at("inbound").size();
+        if (in_degree[node] == 0) {
+            frontier.push(node);
+        }
+    }
+    std::vector<PtrNode> nodes;
+    while (!frontier.empty()) {
+        auto node = frontier.front();
+        nodes.push_back(node);
+        frontier.pop();
+        for (const auto& next_node: outbound(node)) {
+            in_degree[next_node]--;
+            if (in_degree[next_node] == 0) {
+                frontier.push(next_node);
+            }
+        }
+    }
+    if (nodes.size() < m_adj.size()) {
+        throw std::runtime_error("DirectedGraph contains a cycle");
     }
     return nodes;
 }

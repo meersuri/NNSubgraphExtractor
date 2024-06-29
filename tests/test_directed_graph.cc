@@ -91,3 +91,60 @@ TEST(GraphQueries, adjacency) {
     ASSERT_EQ(graph.inbound(n1), std::vector<std::shared_ptr<Node>>{n2});
     ASSERT_EQ(graph.inbound(n3), std::vector<std::shared_ptr<Node>>{n2});
 }
+
+TEST(GraphQueries, sortedNodes1) {
+    DirectedGraph graph("g");
+    auto n1 = std::make_shared<Node>(1);
+    auto n2 = std::make_shared<Node>(2);
+    auto n3 = std::make_shared<Node>(3);
+    graph.addEdge(n1, n2);
+    graph.addEdge(n2, n3);
+    std::vector<PtrNode> expected_order{n1, n2, n3};
+    ASSERT_EQ(graph.nodes_sorted(), expected_order);
+}
+
+TEST(GraphQueries, sortedNodes2) {
+    DirectedGraph graph("g");
+    auto n1 = std::make_shared<Node>(1);
+    auto n2 = std::make_shared<Node>(2);
+    auto n3 = std::make_shared<Node>(3);
+    graph.addEdge(n3, n2);
+    graph.addEdge(n2, n1);
+    std::vector<PtrNode> expected_order{n3, n2, n1};
+    ASSERT_EQ(graph.nodes_sorted(), expected_order);
+}
+
+TEST(GraphQueries, sortedNodes3) {
+    DirectedGraph graph("g");
+    auto n1 = std::make_shared<Node>(1);
+    auto n2 = std::make_shared<Node>(2);
+    auto n3 = std::make_shared<Node>(3);
+    auto n4 = std::make_shared<Node>(4);
+    auto n5 = std::make_shared<Node>(5);
+    graph.addEdge(n1, n4);
+    graph.addEdge(n2, n4);
+    graph.addEdge(n4, n5);
+    graph.addEdge(n3, n5);
+    auto sorted_nodes = graph.nodes_sorted();
+    std::vector<std::set<PtrNode>> levels{{n1, n2, n3}, {n4}, {n5}};
+    int node_idx = 0;
+    for (int i = 0; i < levels.size(); ++i) {
+        std::set<PtrNode> level;
+        int max_node_idx = node_idx + levels[i].size();
+        while (node_idx < max_node_idx) {
+            level.insert(sorted_nodes[node_idx++]);
+        }
+        ASSERT_EQ(levels[i], level);
+    }
+}
+
+TEST(GraphQueries, sortedNodesCycle) {
+    DirectedGraph graph("g");
+    auto n1 = std::make_shared<Node>(1);
+    auto n2 = std::make_shared<Node>(2);
+    auto n3 = std::make_shared<Node>(3);
+    graph.addEdge(n1, n2);
+    graph.addEdge(n2, n1);
+    graph.addEdge(n2, n3);
+    ASSERT_THROW(graph.nodes_sorted(), std::runtime_error);
+}

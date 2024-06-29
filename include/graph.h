@@ -47,6 +47,7 @@ class DirectedGraph {
         bool addEdge(PtrNode from, PtrNode to, const std::string& label);
         bool removeEdge(PtrNode from, PtrNode to);
         std::vector<PtrNode> nodes() const;
+        std::vector<PtrNode> nodes_sorted() const;
         std::vector<PtrNode> top() const;
         std::vector<PtrNode> bottom() const;
         std::vector<DirectedEdge> edges() const;

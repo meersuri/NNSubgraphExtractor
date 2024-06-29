@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <map>
 #include <fstream>
+#include "spdlog/spdlog.h"
 
 #include "subgraph_extractor.h"
 #include "onnx.proto3.pb.h"
@@ -128,11 +129,10 @@ std::unique_ptr<NNModel> OnnxSubgraphExtractor::extract(const std::vector<std::s
         output_nodes.push_back(node_opt.value());
     }
     auto subgraph = m_sgex.extract(input_nodes, output_nodes);
-    std::cout << '\n';
+    spdlog::debug("Extracted edges:");
     for (const auto& e: subgraph->edges()) {
-        std::cout << e.from->name() << "->" << e.to->name() << ' '; 
+        spdlog::debug(e.from->name() + "->" + e.to->name());
     }
-    std::cout << '\n';
 
     std::vector<onnx::NodeProto> node_protos;
     for (auto node: subgraph->nodes()) {

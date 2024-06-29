@@ -55,7 +55,7 @@ class NNModelSubgraphExtractor {
 
 class OnnxSubgraphExtractor: public NNModelSubgraphExtractor {
     public:
-        OnnxSubgraphExtractor(std::shared_ptr<OnnxModel> model): m_model(model), NNModelSubgraphExtractor(model) {}
+        OnnxSubgraphExtractor(std::shared_ptr<OnnxModel> model): NNModelSubgraphExtractor(model), m_model(model){}
         std::unique_ptr<NNModel> extract(const std::vector<std::string>& inputs, const std::vector<std::string>& outputs) override;
     private:
         std::shared_ptr<OnnxModel> m_model;
